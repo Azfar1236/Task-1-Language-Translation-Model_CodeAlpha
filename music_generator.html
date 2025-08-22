@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .control-panel h3 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        select, input[type="range"], input[type="number"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #ddd;
+            border: none;
+            border-radius: 3px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1e3c72;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.4);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .visualizer-panel {
+            background: #000;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visualizer {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .frequency-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            height: 100%;
+            padding: 20px;
+        }
+
+        .bar {
+            background: linear-gradient(to top, #ff6b6b, #4ecdc4, #45b7d1);
+            width: 8px;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.1s ease;
+            opacity: 0.8;
+        }
+
+        .waveform {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .player-controls {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .play-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            height: 60px;
+        }
+
+        .play-btn:hover {
+            background: #2ecc71;
+            transform: scale(1.1);
+        }
+
+        .play-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            flex: 1;
+            background: #34495e;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #7f8c8d;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.1s ease;
+            width: 0%;
+        }
+
+        .time-display {
+            color: white;
+            font-size: 14px;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .download-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        .music-library {
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .music-library h3 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .generated-tracks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .track-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .track-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: #1e3c72;
+        }
+
+        .track-info {
+            margin-bottom: 15px;
+        }
+
+        .track-name {
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .track-details {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .track-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mini-play-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e3c72;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .player-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .generated-tracks {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 AI Music Generator</h1>
+            <p>Create unique music sequences using artificial intelligence</p>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <h3>🎛️ Music Parameters</h3>
+                
+                <div class="control-group">
+                    <label>Music Genre:</label>
+                    <select id="genreSelect">
+                        <option value="classical">Classical</option>
+                        <option value="jazz">Jazz</option>
+                        <option value="electronic">Electronic</option>
+                        <option value="ambient">Ambient</option>
+                        <option value="pop">Pop</option>
+                        <option value="rock">Rock</option>
+                        <option value="blues">Blues</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Key Signature:</label>
+                    <select id="keySelect">
+                        <option value="C">C Major</option>
+                        <option value="G">G Major</option>
+                        <option value="D">D Major</option>
+                        <option value="A">A Major</option>
+                        <option value="E">E Major</option>
+                        <option value="F">F Major</option>
+                        <option value="Bb">Bb Major</option>
+                        <option value="Am">A Minor</option>
+                        <option value="Em">E Minor</option>
+                        <option value="Dm">D Minor</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Tempo (BPM):</label>
+                    <div class="control-row">
+                        <input type="range" id="tempoSlider" min="60" max="200" value="120">
+                        <div class="value-display" id="tempoValue">120</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Duration (seconds):</label>
+                    <div class="control-row">
+                        <input type="range" id="durationSlider" min="10" max="60" value="30">
+                        <div class="value-display" id="durationValue">30</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Complexity:</label>
+                    <div class="control-row">
+                        <input type="range" id="complexitySlider" min="1" max="10" value="5">
+                        <div class="value-display" id="complexityValue">5</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Instruments:</label>
+                    <select id="instrumentSelect" multiple style="height: 80px;">
+                        <option value="piano">Piano</option>
+                        <option value="guitar">Guitar</option>
+                        <option value="violin">Violin</option>
+                        <option value="drums">Drums</option>
+                        <option value="bass">Bass</option>
+                        <option value="flute">Flute</option>
+                        <option value="synth">Synthesizer</option>
+                    </select>
+                </div>
+
+                <button class="generate-btn" id="generateBtn">🎼 Generate Music</button>
+            </div>
+
+            <div class="visualizer-panel">
+                <div class="visualizer" id="visualizer">
+                    <div class="frequency-bars" id="frequencyBars"></div>
+                    <div class="waveform" id="waveform">
+                        🎵 Music visualization will appear here<br>
+                        <small>Generate music to see the waveform</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>AI is composing your music... Please wait</p>
+        </div>
+
+        <div class="player-controls" id="playerControls" style="display: none;">
+            <button class="play-btn" id="playBtn" disabled>▶️</button>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+            </div>
+            <div class="volume-control">
+                <span>🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70" style="width: 100px;">
+                <span id="volumeValue">70%</span>
+            </div>
+            <button class="download-btn" id="downloadBtn">⬇️ Download</button>
+        </div>
+
+        <div class="music-library">
+            <h3>🎶 Generated Music Library</h3>
+            <div
